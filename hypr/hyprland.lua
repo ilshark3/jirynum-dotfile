@@ -47,7 +47,7 @@ local menu = "hyprlauncher"
 hl.on("hyprland.start", function ()
   hl.exec_cmd("waybar")
   hl.exec_cmd("awww-daemon")
-  hl.exec_cmd("sleep 1 && awww img ~/Pictures/wallpapers/k-on1.jpg")
+  hl.exec_cmd("sleep 1 && awww img ~/Pictures/wallpapers/k-on2.jpg")
 end)
 
 
