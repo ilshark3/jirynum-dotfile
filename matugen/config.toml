@@ -1,0 +1,10 @@
+[config]
+reload_apps = true
+
+[templates.quickshell_colors]
+input_path = '/home/ilshark3_tests/.config/quickshell/config/Colors.qml.template'
+output_path = '/home/ilshark3_tests/.config/quickshell/config/Colors.qml'
+
+# || true permet d'ignorer l'erreur si quickshell n'est pas démarré
+pre_hook = 'killall quickshell || true'
+post_hook = 'quickshell &'
