@@ -1,6 +1,7 @@
 import Quickshell
 import "./config"
 import "./components"
+import "./services" as Services
 
 ShellRoot {
     Bar {
