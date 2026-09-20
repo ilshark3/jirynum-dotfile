@@ -15,8 +15,6 @@ import Qt5Compat.GraphicalEffects
 
 import "."
 import "../config"
-import "../services" as Services
-import "../reusables"
 
 // Main Control Panel window component
 PanelWindow {
@@ -1180,59 +1178,409 @@ PanelWindow {
                         refreshAudioDevices()
                 }
 
-                Dropdown {
-                    id: outputDropdown
+                Rectangle {
+                    id: outPutAudio
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
-                    width: parent.width / 2 - 2.5
+                    width: parent.width /2 -2.5
+                    radius: Variables.radiusO
+                    color: Colors.surface1
+                    border.width: 2
+                    border.color: Colors.surface2
 
-                    iconSource: "../icons/headset.svg"
-                    displayText: audioOutInItem.selectedOutput
-                    model: audioOutInItem.outputDevices
-                    open: audioOutInItem.outputMenuOpen
-                    emptyText: "No audio output"
+                    Item {
+                        id: headsetItem
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: parent.width * 0.2
 
-                    onToggleRequested: {
-                        audioOutInItem.outputMenuOpen = !audioOutInItem.outputMenuOpen
-                        if (audioOutInItem.outputMenuOpen)
-                            audioOutInItem.inputMenuOpen = false
+                        Image {
+                            id: headsetImg
+                            anchors.centerIn: parent
+                            source: "../icons/headset.svg"  
+                            width: outPutAudio.width * 0.15
+                            height: width
+                            visible: false    
+                            sourceSize.width: width
+                            sourceSize.height: height
+                        }
+                        
+                        ColorOverlay {
+                            anchors.fill: headsetImg
+                            source: headsetImg
+                            color: Colors.subtext1
+                        }
                     }
 
-                    onItemSelected: (item) => {
-                        if (item.node) {
-                            Pipewire.preferredDefaultAudioSink = item.node
-                            audioOutInItem.selectedOutput = item.name
+                    Item {
+                        id: outputName
+                        anchors.right: arrowItem1.left
+                        anchors.left: headsetItem.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            text: audioOutInItem.selectedOutput
+                            color: Colors.text
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 13
+                            elide: Text.ElideRight
+                            font.bold: true
                         }
-                        audioOutInItem.outputMenuOpen = false
+                    }
+
+                    Item {
+                        id: arrowItem1
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: parent.width * 0.15
+
+                        Image {
+                            id: arrowImg1
+                            anchors.centerIn: parent
+                            source: "../icons/down-arrow.svg"  
+                            width: outPutAudio.width * 0.15
+                            height: width
+                            visible: false    
+                            sourceSize.width: width
+                            sourceSize.height: height
+                        }
+                        
+                        ColorOverlay {
+                            anchors.fill: arrowImg1
+                            source: arrowImg1
+                            color: Colors.subtext1
+                            rotation: audioOutInItem.outputMenuOpen ? 180 : 0
+
+                            Behavior on rotation {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+
+                            onClicked: {
+                                audioOutInItem.outputMenuOpen =
+                                    !audioOutInItem.outputMenuOpen
+
+                                if (audioOutInItem.outputMenuOpen)
+                                    audioOutInItem.inputMenuOpen = false
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: outputDropdown
+
+                        visible: height > 0
+                        clip: false
+                        anchors.top: parent.bottom
+                        anchors.topMargin: 4
+                        anchors.left: parent.left
+                        z: -1
+
+                        width: parent.width
+
+                        height: audioOutInItem.outputMenuOpen
+                            ? Math.min(Math.max(audioOutList.contentHeight + 10, 40), 180)
+                            : 0
+
+                        Behavior on height {
+                            NumberAnimation { duration: 220; easing.type: Easing.OutQuint }
+                        }
+
+                        Behavior on anchors.topMargin {
+                            NumberAnimation { duration: 220; easing.type: Easing.OutQuint }
+                        }
+
+                        radius: Variables.radiusO
+                        color: Colors.surface1
+                        border.width: 2
+                        border.color: Colors.surface2
+                        z: 100
+
+                        ListView {
+                            id: audioOutList
+
+                            anchors.fill: parent
+                            anchors.margins: 5
+                            clip: true
+                            spacing: 3
+
+                            model: audioOutInItem.outputDevices
+
+                            delegate: Rectangle {
+                                width: audioOutList.width
+                                height: 34
+
+                                radius: Variables.radiusO
+
+                                color: mouseArea.containsMouse
+                                    ? Colors.surface2
+                                    : "transparent"
+
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 8
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    text: modelData.name
+                                    color: Colors.text
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 10
+                                    elide: Text.ElideRight
+                                    font.bold: true
+                                }
+
+                                MouseArea {
+                                    id: mouseArea
+
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+
+                                    onClicked: {
+                                        if (modelData.node) {
+                                            Pipewire.preferredDefaultAudioSink =
+                                                modelData.node
+
+                                            audioOutInItem.selectedOutput =
+                                                modelData.name
+                                        }
+
+                                        audioOutInItem.outputMenuOpen = false
+                                    }
+                                }
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+
+                                visible:
+                                    audioOutInItem.outputDevices.length === 0
+
+                                text: "No audio output"
+                                color: Colors.subtext0
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 10
+                            }
+                        }
                     }
                 }
 
-                Dropdown {
-                    id: inputDropdown
+                Rectangle {
+                    id: inPutAudio
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.right: parent.right
-                    width: parent.width / 2 - 2.5
+                    width: parent.width /2 -2.5
+                    radius: Variables.radiusO
+                    color: Colors.surface1
+                    border.width: 2
+                    border.color: Colors.surface2
 
-                    iconSource: "../icons/microphone.svg"
-                    displayText: audioOutInItem.selectedInput
-                    model: audioOutInItem.inputDevices
-                    open: audioOutInItem.inputMenuOpen
-                    emptyText: "No audio input"
+                    Item {
+                        id: microphoneItem
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: parent.width * 0.2
 
-                    onToggleRequested: {
-                        audioOutInItem.inputMenuOpen = !audioOutInItem.inputMenuOpen
-                        if (audioOutInItem.inputMenuOpen)
-                            audioOutInItem.outputMenuOpen = false
+                        Image {
+                            id: microphoneImg
+                            anchors.centerIn: parent
+                            source: "../icons/microphone.svg"  
+                            width: inPutAudio.width * 0.15
+                            height: width
+                            visible: false    
+                            sourceSize.width: width
+                            sourceSize.height: height
+                        }
+                        
+                        ColorOverlay {
+                            anchors.fill: microphoneImg
+                            source: microphoneImg
+                            color: Colors.subtext1
+                        }
                     }
 
-                    onItemSelected: (item) => {
-                        if (item.node) {
-                            Pipewire.preferredDefaultAudioSource = item.node
-                            audioOutInItem.selectedInput = item.name
+                    Item {
+                        id: inputName
+                        anchors.right: arrowItem2.left
+                        anchors.left: microphoneItem.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            text: audioOutInItem.selectedInput
+                            color: Colors.text
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 13
+                            elide: Text.ElideRight
+                            font.bold: true
                         }
-                        audioOutInItem.inputMenuOpen = false
+                    }
+
+                    Item {
+                        id: arrowItem2
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        width: parent.width * 0.15
+
+                        Image {
+                            id: arrowImg2
+                            anchors.centerIn: parent
+                            source: "../icons/down-arrow.svg"  
+                            width: inPutAudio.width * 0.15
+                            height: width
+                            visible: false    
+                            sourceSize.width: width
+                            sourceSize.height: height
+                        }
+                        
+                        ColorOverlay {
+                            id: arrowOverlay2
+                            anchors.fill: arrowImg2
+                            source: arrowImg2
+                            color: Colors.subtext1
+
+                            rotation: audioOutInItem.inputMenuOpen ? 180 : 0
+
+                            Behavior on rotation {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+
+                            onClicked: {
+                                audioOutInItem.inputMenuOpen =
+                                    !audioOutInItem.inputMenuOpen
+
+                                if (audioOutInItem.inputMenuOpen)
+                                    audioOutInItem.outputMenuOpen = false
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: inputDropdown
+
+                        visible: height > 0
+                        clip: false
+
+                        anchors.top: parent.bottom
+                        anchors.topMargin: 4
+                        anchors.right: parent.right
+
+                        width: parent.width
+                        height: audioOutInItem.inputMenuOpen
+                            ? Math.min(Math.max(audioOutList.contentHeight + 10, 40), 180)
+                            : 0
+
+                        Behavior on height {
+                            NumberAnimation { duration: 220; easing.type: Easing.OutQuint }
+                        }
+
+                        Behavior on anchors.topMargin {
+                            NumberAnimation { duration: 220; easing.type: Easing.OutQuint }
+                        }
+
+                        radius: Variables.radiusO
+                        color: Colors.surface1
+                        border.width: 2
+                        border.color: Colors.surface2
+
+                        ListView {
+                            id: audioInList
+
+                            anchors.fill: parent
+                            anchors.margins: 5
+                            clip: true
+                            spacing: 3
+
+                            model: audioOutInItem.inputDevices
+
+                            delegate: Rectangle {
+                                width: audioInList.width
+                                height: 34
+
+                                radius: Variables.radiusO
+
+                                color: mouseArea.containsMouse
+                                    ? Colors.surface2
+                                    : "transparent"
+
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 8
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    text: modelData.name
+                                    color: Colors.text
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 10
+                                    elide: Text.ElideRight
+                                    font.bold: true
+                                }
+
+                                MouseArea {
+                                    id: mouseArea
+
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+
+                                    onClicked: {
+                                        if (modelData.node) {
+                                            Pipewire.preferredDefaultAudioSource =
+                                                modelData.node
+
+                                            audioOutInItem.selectedInput =
+                                                modelData.name
+                                        }
+
+                                        audioOutInItem.inputMenuOpen = false
+                                    }
+                                }
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+
+                                visible:
+                                    audioOutInItem.inputDevices.length === 0
+
+                                text: "No audio input"
+                                color: Colors.subtext0
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 10
+                            }
+                        }
                     }
                 }
             }
@@ -1245,9 +1593,13 @@ PanelWindow {
                 height: 350
                 anchors.topMargin: 5
 
-                Card {
+                Rectangle {
                     id: notifBg
                     anchors.fill: parent
+                    radius: Variables.radiusO
+                    color: Colors.surface1
+                    border.width: 2
+                    border.color: Colors.surface2
 
                     Item {
                         id: notifHeader
@@ -1272,10 +1624,11 @@ PanelWindow {
                             anchors.leftMargin: 14
                             anchors.top: parent.verticalCenter
                             anchors.topMargin: 2
-                            text: Services.NotifService.count + " unread"
+                            text: Notifications.list.count + " unread"
                             font.pixelSize: 10
                             font.family: "JetBrains Mono"
                             color: Colors.subtext0
+                            visible: true
                         }
 
                         // Bouton "Clear all"
@@ -1292,7 +1645,7 @@ PanelWindow {
                                 : "transparent"
                             border.width: 1
                             border.color: Colors.surface2
-                            visible: Services.NotifService.count > 0
+                            visible: Notifications.list.count > 0
 
                             Behavior on color {
                                 ColorAnimation { duration: 120 }
@@ -1340,18 +1693,25 @@ PanelWindow {
 
                         model: Services.NotifService.list
 
-                        delegate: Card {
+                        delegate: Rectangle {
                             id: notifCard
                             width: notifList.width
                             height: notifContent.implicitHeight + 24
-                            hoverable: true
-                            baseColor: Colors.surface0
-                            border.width: 0
+                            radius: Variables.radiusO
+                            color: cardMouse.containsMouse
+                                ? Colors.surface2
+                                : Colors.surface0
+
+                            Behavior on color {
+                                ColorAnimation { duration: 120 }
+                            }
 
                             // Animation d'entrée
                             opacity: 0
                             x: 20
-                            Component.onCompleted: entryAnim.start()
+                            Component.onCompleted: {
+                                entryAnim.start()
+                            }
 
                             ParallelAnimation {
                                 id: entryAnim
@@ -1380,8 +1740,8 @@ PanelWindow {
                                 width: 3
                                 radius: 2
                                 color: {
-                                    if (modelData.urgency === NotificationUrgency.Critical) return "#e06c75"
-                                    if (modelData.urgency === NotificationUrgency.Low) return Colors.surface2
+                                    if (model.urgency === "critical") return "#e06c75"
+                                    if (model.urgency === "low") return Colors.surface2
                                     return Colors.subtext1 // normal
                                 }
                             }
@@ -1402,20 +1762,42 @@ PanelWindow {
                                     height: 22
                                     spacing: 8
 
-                                    IconButton {
+                                    // Icône de l'app
+                                    Item {
                                         width: 18
                                         height: 18
                                         anchors.verticalCenter: parent.verticalCenter
-                                        source: modelData.appIcon || "../icons/bell.svg"
-                                        clickable: false
+
+                                        Image {
+                                            id: appIconImg
+                                            anchors.fill: parent
+                                            source: model.appIcon || "../icons/bell.svg"
+                                            visible: false
+                                            sourceSize.width: 18
+                                            sourceSize.height: 18
+                                        }
+
+                                        ColorOverlay {
+                                            anchors.fill: appIconImg
+                                            source: appIconImg
+                                            color: Colors.subtext1
+                                        }
                                     }
 
                                     Text {
-                                        text: modelData.appName || "Notification"
+                                        text: model.appName || "Notification"
                                         font.family: "JetBrains Mono"
                                         font.pixelSize: 11
                                         font.bold: true
                                         color: Colors.subtext1
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    Text {
+                                        text: "•  " + (model.time || "now")
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: 10
+                                        color: Colors.subtext0
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
@@ -1426,7 +1808,7 @@ PanelWindow {
                                     anchors.topMargin: 4
                                     anchors.left: parent.left
                                     anchors.right: parent.right
-                                    text: modelData.summary || ""
+                                    text: model.summary || ""
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 13
                                     font.bold: true
@@ -1442,7 +1824,7 @@ PanelWindow {
                                     anchors.topMargin: 2
                                     anchors.left: parent.left
                                     anchors.right: parent.right
-                                    text: modelData.body || ""
+                                    text: model.body || ""
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 11
                                     color: Colors.subtext0
@@ -1466,7 +1848,7 @@ PanelWindow {
                                     ? Colors.surface2
                                     : "transparent"
 
-                                opacity: notifCard.hovered ? 1 : 0
+                                opacity: cardMouse.containsMouse ? 1 : 0
                                 Behavior on opacity {
                                     NumberAnimation { duration: 120 }
                                 }
@@ -1483,8 +1865,15 @@ PanelWindow {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: Services.NotifService.discard(modelData.id)
+                                    onClicked: Services.NotifService.discard(model.id)
                                 }
+                            }
+
+                            MouseArea {
+                                id: cardMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                z: -1 // en dessous du closeBtn pour ne pas lui voler le hover
                             }
                         }
 
@@ -1927,11 +2316,6 @@ PanelWindow {
                         }
                     }
                 }
-            }
-
-            // Notification section container
-            Row {
-                id: notificationSection
             }
         }
     }
